@@ -72,12 +72,25 @@ BEGIN
                     
             ELSE
                 -- Table-level row access policy
-                v_sql_statement := 'ALTER TABLE ' || v_tablename || 
-                                 ' ADD ROW ACCESS POLICY ' || v_assignedpolicy;
-                                 
-                v_result_message := v_result_message || 
-                    'Applying row access policy ' || v_assignedpolicy || 
-                    ' to table ' || v_tablename || '\n';
+                IF v_indirecttablecolumn IS NOT NULL AND v_indirecttablecolumn != '' THEN
+                    -- Row access policy with ON clause for specific column(s)
+                    v_sql_statement := 'ALTER TABLE ' || v_tablename || 
+                                     ' ADD ROW ACCESS POLICY ' || v_assignedpolicy ||
+                                     ' ON (' || v_indirecttablecolumn || ')';
+                                     
+                    v_result_message := v_result_message || 
+                        'Applying row access policy ' || v_assignedpolicy || 
+                        ' on column ' || v_indirecttablecolumn || 
+                        ' in table ' || v_tablename || '\n';
+                else
+                    -- Standard row access policy without ON clause
+                    v_sql_statement := 'ALTER TABLE ' || v_tablename || 
+                                     ' ADD ROW ACCESS POLICY ' || v_assignedpolicy;
+                                     
+                    v_result_message := v_result_message || 
+                        'Applying row access policy ' || v_assignedpolicy || 
+                        ' to table ' || v_tablename || '\n';
+                END IF;
             END IF;
             
             -- Execute the policy application
@@ -211,7 +224,8 @@ DECLARE
         SELECT DISTINCT
             TABLENAME,
             COLUMNNAME,
-            ASSIGNEDPOLICY
+            ASSIGNEDPOLICY,
+            INDIRECTTABLECOLUMN
         FROM DBCSUDL.CHRS.DL_CHRS_TABLE_POLICY_MAPPING
         WHERE ASSIGNEDPOLICY IS NOT NULL;
     
@@ -290,6 +304,8 @@ CONFIGURATION TABLE STRUCTURE:
 
 POLICY TYPES SUPPORTED:
 1. Row Access Policies: Applied when COLUMNNAME is NULL/empty
+   a. Standard Row Access Policies: Applied to entire table
+   b. Column-specific Row Access Policies: Applied with ON (column) clause when INDIRECTTABLECOLUMN is specified
 2. Column Masking Policies: Applied when COLUMNNAME is specified
 
 ERROR HANDLING:
@@ -297,4 +313,3 @@ ERROR HANDLING:
 - Detailed error messages are returned in the result
 - Summary statistics provided at the end
 */
-

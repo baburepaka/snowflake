@@ -46,7 +46,7 @@ CREATE OR REPLACE TABLE DBCSUDL.CHRS.DL_CHRS_TABLE_POLICY_MAPPING (
 | `COLUMNNAME` | Target column | Conditional | Required for masking policies, NULL for row access |
 | `DIRECTTABLE` | Policy type flag | Optional | 'Y' for direct table policies |
 | `INDIRECTTABLE` | Reference table | Optional | For complex policy scenarios |
-| `INDIRECTTABLECOLUMN` | Reference column | Optional | Column in reference table |
+| `INDIRECTTABLECOLUMN` | Reference column | Optional | For row access policies: Column to apply the ON clause (e.g., "ON (BUSINESS_UNIT)") |
 | `ASSIGNEDPOLICY` | Policy name | **Required** | Must exist in Snowflake |
 | `COMMENTS` | Documentation | Optional | Helpful for maintenance |
 
@@ -124,6 +124,19 @@ WHERE TABLE_SCHEMA = 'CHRS';
 -- Apply row access policy to entire table
 INSERT INTO DBCSUDL.CHRS.DL_CHRS_TABLE_POLICY_MAPPING VALUES
 ('1', 'DBCSUDL.CHRS.EMPLOYEE_DATA', NULL, 'Y', NULL, NULL, 'HR_ROW_ACCESS_POLICY', 'Restrict by department');
+
+-- Apply row access policy with ON clause (specific column)
+INSERT INTO DBCSUDL.CHRS.DL_CHRS_TABLE_POLICY_MAPPING VALUES
+('2', 'DBCSUDL.CHRS.DL_POSITION_DATA', NULL, 'Y', NULL, 'BUSINESS_UNIT', 'PS_CHRS_BUSINESS_UNIT_POLICY', 'Apply on BUSINESS_UNIT column');
+```
+
+This will generate SQL like:
+```sql
+-- For standard row access policy:
+ALTER TABLE DBCSUDL.CHRS.EMPLOYEE_DATA ADD ROW ACCESS POLICY HR_ROW_ACCESS_POLICY;
+
+-- For row access policy with ON clause:
+ALTER TABLE DBCSUDL.CHRS.DL_POSITION_DATA ADD ROW ACCESS POLICY PS_CHRS_BUSINESS_UNIT_POLICY ON (BUSINESS_UNIT);
 ```
 
 ### Column Masking Policy Configuration
@@ -249,4 +262,3 @@ For issues or questions:
 - **v1.1**: Added validation and rollback procedures
 - **v1.2**: Enhanced error handling and reporting
 - **v1.3**: Added comprehensive documentation and examples
-
